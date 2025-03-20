@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import interact from 'interactjs';
 import { UpwardArrowIcon, StarIcon, BreadCrumbIcon, CloseLineIcon } from "../assets/svg";
 
 export const Base = () => {
 
-    const { '*': params } = useParams()
+    const { 'projectID': params } = useParams()
+    const { 'pathname': location } = useLocation()
+
+    const navigate = useNavigate()
+    console.log(location)
 
     const schemaContainerRef = useRef(null)
     const title: any = useRef(null)
@@ -116,7 +120,7 @@ export const Base = () => {
     }
 
     const navbarHandler = ( destination: string ) => {
-        window.location.pathname = destination
+        navigate(destination)
     }
 
     useEffect(() => {
@@ -222,7 +226,7 @@ export const Base = () => {
     useEffect(() => {
         
         currentProject !== null && (
-            navbarHandler(currentProject)
+            navbarHandler(`/${currentProject}`)
         )
     }, [currentProject])
 
@@ -239,11 +243,11 @@ export const Base = () => {
                 <div className="flex items-center gap-4">
                     <button className="bg-transparent border-0 text-xl cursor-pointer" onClick={(ev) => 
                         {
-                            !details ? (
-                                    navbarHandler("details")
+                            location === "/" || location !== "/details" ? (
+                                    navbarHandler("/details")
                             ) : (
                                 currentProject !== null ? (
-                                    navbarHandler(currentProject)
+                                    navbarHandler(`/${currentProject}`)
                                 ) : (
                                     navbarHandler("/")
                                 )
@@ -251,7 +255,7 @@ export const Base = () => {
                         }
                     }>
                         {
-                            !details ? (
+                            location === "/" || location !== "/details" ? (
                                 <BreadCrumbIcon size={15} color="white" />
                             ) : (
                                 <CloseLineIcon size={15} color="white" />
@@ -264,7 +268,7 @@ export const Base = () => {
                 </div>
             </header>
 
-            {params?.length === 0 ? (
+            {location === "/" ? (
                 <div className="flex flex-col flex-1">
                     <div className="flex-1 p-5 bg-transparent relative overflow-auto m-2 rounded">
                         <div className="flex flex-col items-center justify-center h-full">
@@ -275,7 +279,7 @@ export const Base = () => {
                     {/* <div className="p-4 bg-transparent mx-2 mb-2 rounded max-h-40 overflow-y-auto"></div> */}
                 </div>
             ) : (
-                !details ? (
+                location === "/" || location !== "/details" ? (
                     <>
                         <div ref={schemaContainerRef} className="flex-1 p-5 bg-transparent relative overflow-auto m-2 rounded">
                             {entities.map((entity: any) => (
@@ -324,14 +328,12 @@ export const Base = () => {
                                                 return (
                                                     <button key={id} className="m-0 text-sm text-blue-600 font-small mb-6" onClick={(ev) => {
                                                         setCurrentProject(id)
-                                                        // navbarHandler(id)
                                                     }}>{title}</button>
                                                 )
                                             } else {
                                                 return (
                                                     <button key={id} className="m-0 text-sm text-gray-800 font-small mb-6" onClick={(ev) => {
                                                         setCurrentProject(id)
-                                                        // navbarHandler(id)
                                                     }}>{title}</button>
                                                 )
                                             }
@@ -347,7 +349,7 @@ export const Base = () => {
 
             {/* Input Container */}
             {
-                !details ? (
+                location === "/" || location !== "/details" ? (
                     <div className="flex items-center justify-center">
                         <div className="flex items-center border border-gray-200 mx-2 mb-8 rounded-xl w-[60%]">
                             <input type="text" placeholder="Ask anything" className="flex-1 px-5 py-3 rounded-xl text-xs focus:outline-none"/>

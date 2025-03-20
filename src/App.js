@@ -6,7 +6,9 @@ import { Base } from './components/base';
 const App = () => {
     return (
         <Routes>
-            <Route path= {"/*"} element= {<Base />} />
+            <Route path= {"/"} element= {<Base />} />
+            <Route path= {"/details"} element= {<Base />} />
+            <Route path= {"/:projectID"} element= {<Base />} />
         </Routes>
     )
 }
