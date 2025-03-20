@@ -1,15 +1,15 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.js
 
 # testing
-/coverage
+coverage
 
 # production
-/build
+build
 
 # misc
 .DS_Store
@@ -21,3 +21,59 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+environ
+env
+*.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Django-specific
+*.sqlite3
+db.sqlite3
+/media/
+staticfiles/
+local_settings.py
+
+# If using Celery
+celerybeat-schedule
+
+# If using Django migrations
+*/migrations/__pycache__/
+*/migrations/*.pyc
+
+# Logs
+logs/
+*.log
+*.out
+*.err
+*.swp
+
+# IDE/editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Testing
+.coverage
+.tox/
+.nox/
+htmlcov/
+pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# If using Docker
+docker-compose.override.yml
