@@ -1,114 +1,60 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import interact from 'interactjs';
 import { UpwardArrowIcon, StarIcon, BreadCrumbIcon, CloseLineIcon, EditButtonIcon } from "../assets/svg";
-import { Target } from '@interactjs/core/types';
+import interact from 'interactjs';
+import axios from 'axios';
 
 export const Base = () => {
 
-    const { 'projectID': params } = useParams()
     const { 'pathname': location } = useLocation()
 
     const navigate = useNavigate()
-    console.log(location)
+    const API_URL = "http://127.0.0.1:8000/api/"
 
     const schemaContainerRef = useRef<HTMLDivElement | any>(null)
-
-    const [entities, setEntities] = useState(
-        [
-            {
-                id: 'users',
-                title: 'Users',
-                position: { x: 0, y: 0 },
-                fields: [
-                    { name: 'id', type: 'int' },
-                    { name: 'name', type: 'varchar' },
-                    { name: 'email', type: 'varchar' },
-                    { name: 'password', type: 'varchar' },
-                    { name: 'phone', type: 'varchar' }
-                ]
-            },
-            {
-                id: 'roles',
-                title: 'Roles',
-                position: { x: 250, y: 0 },
-                fields: [
-                    { name: 'id', type: 'int' },
-                    { name: 'role_name', type: 'varchar' }
-                ]
-            },
-            {
-                id: 'login_history',
-                title: 'Login History',
-                position: { x: 500, y: 0 },
-                fields: [
-                    { name: 'id', type: 'int' },
-                    { name: 'user_id', type: 'int' },
-                    { name: 'login_time', type: 'Timestamp' },
-                    { name: 'ip_address', type: 'varchar' }
-                ]
-            },
-            {
-                id: 'permissions_table',
-                title: 'Permissions Table',
-                position: { x: 750, y: 0 },
-                fields: [
-                    { name: 'id', type: 'int' },
-                    { name: 'role_id', type: 'int' },
-                    { name: 'permission_name', type: 'varchar' },
-                    { name: 'permission_id', type: 'int' }
-                ]
-            }
-        ]
+    const tempTitleRef = useRef<string | null>(null)
+    const [entities, setEntities] = useState<any[]>(
+        []
     )
-
-    const [details, setDetails] = useState(false)
     const [currentProject, setCurrentProject] = useState<any>(null)
-    const [schemaTitle, setSchemaTitle] = useState("Database Schema")
+    const [schemaTitle, setSchemaTitle] = useState("")
     const [isEditing, setIsEditing] = useState(false)
     const [schemaText, setSchemaText] = useState("")
+    const [conversationInput, setConversationInput] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
+    const [errorMessage, setErrorMessage] = useState("")
     const [messages, setMessages] = useState([
         {
-        sender: 'ai',
-        text: 'Now you can control what each role can do. That\'s everything! Sound good?'
+            sender: "ai",
+            text: ""
         },
         {
-        sender: 'user',
-        text: 'Okay, cool. That works.'
+            sender: "user",
+            text: ""
         }
     ])
     const [projects, setProjects] = useState([
         {
             id: 'project1',
             title: 'Database Schema for User Roles',
-            description: 'Description 1'
         },
         {
             id: 'project2',
             title: 'Employee Management Database',
-            description: 'Description 2'
         },
         {
             id: 'project3',
             title: 'Permissions & Access Control Schema',
-            description: 'Description 3'
         },
         {
             id: 'project4',
             title: 'Customer Orders & Payment Schema',
-            description: 'Description 4'
         },
         {
             id: 'project5',
-            title: 'Product & Cart Schema',
-            description: 'Description 5'
+            title: 'Product & Cart Schema'
         }
     ])
-
-    useEffect(() => {
-        const entitiesJson = JSON.stringify(entities, null, 2);
-        setSchemaText(entitiesJson);
-    }, [entities]);
 
     const toggleEditMode = () => {
         if (isEditing) {
@@ -118,10 +64,94 @@ export const Base = () => {
                 setEntities(newEntities);
             } catch (error) {
                 console.error("Invalid JSON:", error);
+                setErrorMessage("Invalid JSON. Please check your syntax.");
+                return; // Don't toggle edit mode if JSON is invalid
             }
         }
         setIsEditing(!isEditing);
-    };
+    }
+
+    const navbarHandler = ( destination: any ) => {
+        navigate(destination)
+    }
+
+    const getSchema = async (title: string) => {
+        try {
+            const response = await axios.get(API_URL, { 
+                params: { title: title } 
+            })
+            
+            // Process entity data all at once instead of incrementally
+            const newEntities = response.data.json.map((entity: any, index: number) => ({
+                id: entity.id, 
+                fields: entity.fields, 
+                title: entity.title, 
+                position: {x: index * 250, y: 0}
+            }))
+            setEntities(newEntities)
+            
+            // Process message data all at once instead of incrementally
+            const newMessages: { sender: string; text: any; }[] = []
+            response.data.conversations.chat.forEach((message: any) => {
+                newMessages.push({ sender: 'user', text: message.user })
+                newMessages.push({ sender: 'ai', text: message.ai })
+            })
+            setMessages(newMessages.reverse())
+        } catch (error) {
+            console.error("Error fetching schema:", error)
+            setErrorMessage("Failed to fetch schema data. Please try again.")
+        }
+    }
+
+    const handleConversationClick = async () => {
+        // Clear any previous error message
+        setErrorMessage("")
+        
+        // Show loading state
+        setIsLoading(true)
+        
+        try {
+            // Reset states first
+            setMessages([])
+            setEntities([])
+            
+            // Validate input
+            if (!conversationInput.trim()) {
+                throw new Error("Please enter a message")
+            }
+            
+            // Create schema and wait for it to complete
+            const response = await axios.post(API_URL, { 
+                title: null, 
+                conversation: conversationInput 
+            })
+            
+            if (!response.data || !response.data.title) {
+                throw new Error("Invalid response from server")
+            }
+            
+            const newTitle = response.data.title
+            setSchemaTitle(newTitle)
+            setConversationInput('')
+            
+            // Store the title and navigate
+            tempTitleRef.current = newTitle
+            navigate(`/${newTitle}`)
+            
+            // Now that we have the title and it's been set, get the schema
+            await getSchema(newTitle)
+        } catch (error: any) {
+            console.error("Error in conversation:", error)
+            // User-facing error message
+            setErrorMessage(
+                error.response?.data?.message || 
+                error.message || 
+                "Failed to process your request. Please try again."
+            )
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     const Title = ({ title } : {title: any}) => {
         return (
@@ -138,19 +168,13 @@ export const Base = () => {
                 )}
             </div>
         );
-    };
-
-    const navbarHandler = ( destination: any ) => {
-        navigate(destination)
     }
 
     useEffect(() => {
-        params === "details" ? (
-            setDetails(true)
-        ) : (
-            setDetails(false)
-        )
-    }, [params])
+        
+        const entitiesJson = JSON.stringify(entities, null, 2);
+        setSchemaText(entitiesJson);
+    }, [entities])
 
     useEffect(() => {
         if (!schemaContainerRef.current || isEditing) return;
@@ -161,7 +185,6 @@ export const Base = () => {
             if (element.getAttribute("data-x")) element.setAttribute("data-x", "0");
             if (element.getAttribute("data-y")) element.setAttribute("data-y", "0");
 
-            // **Draggable**
             interact(element).draggable({
                 inertia: true,
                 modifiers: [
@@ -173,7 +196,7 @@ export const Base = () => {
                 autoScroll: true,
                 listeners: {
                     start: (event) => {
-                        console.log("Drag started:", event.target);
+                        
                         event.target.classList.add("dragging");
                     },
                     move: (event) => {
@@ -191,7 +214,6 @@ export const Base = () => {
                         target.setAttribute("data-y", String(y))
                     },
                     end: (event) => {
-                        console.log("Drag ended:", event.target);
                         event.target.classList.remove("dragging");
 
                         const entityId = event.target.getAttribute("data-id");
@@ -214,12 +236,11 @@ export const Base = () => {
                 },
             })
 
-            // **Resizable**
             interact(element).resizable({
                 edges: { left: true, right: true, top: true, bottom: true },
                 listeners: {
                     start: (event) => {
-                        console.log("Resize started:", event.target);
+                        event.target.classList.add("resizing");
                     },
                     move: (event) => {
                         let { width, height } = event.rect;
@@ -227,7 +248,7 @@ export const Base = () => {
                         event.target.style.height = `${height}px`;
                     },
                     end: (event) => {
-                        console.log("Resize ended:", event.target);
+                        event.target.classList.remove("resizing");
                     },
                 },
                 modifiers: [
@@ -250,9 +271,13 @@ export const Base = () => {
         )
     }, [currentProject])
 
+    useEffect(() => {
+        
+    }, [])
+
     return (
         <div className="flex flex-col h-screen font-sans">
-            {/* Header */}
+            
             <header className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
                 <div className="flex items-center">
                     <div className="text-sm font-semibold text-gray-700">
@@ -345,7 +370,7 @@ export const Base = () => {
                                             {entity.title}
                                         </div>
                                         <div className="py-1">
-                                            {entity.fields.map((field, index) => (
+                                            {entity.fields.map((field: any, index: number) => (
                                                 <div key={index} className="flex justify-between px-3 py-1 border-b border-gray-100 last:border-0">
                                                     <div className="text-sm">{field.name}</div>
                                                     <div className="text-sm text-gray-500">{field.type}</div>
@@ -383,7 +408,7 @@ export const Base = () => {
                             <div className="flex-1 p-1 bg-transparent relative overflow-auto m-2 rounded">
                                 <div className="flex flex-col items-center justify-center h-full">
                                     {
-                                        projects.map(({id, title, description}) => {
+                                        projects.map(({id, title} : {id: string, title: string}) => {
                                             if (id === currentProject) {
                                                 return (
                                                     <button key={id} className="m-0 text-sm text-blue-600 font-small mb-6" onClick={(ev) => {
@@ -405,15 +430,33 @@ export const Base = () => {
                     )
                 )
             }
-        
+
+            {/* Error message display */}
+            {errorMessage && (
+                <div className="text-center text-sm text-red-500 mb-2">{errorMessage}</div>
+            )}
 
             {/* Input Container */}
             {
                 location === "/" || location !== "/details" ? (
-                    <div className="flex items-center justify-center">
+                    <div className="flex flex-col items-center justify-center">
+                        {isLoading && (
+                            <div className="text-center text-sm text-gray-500 mb-2">Processing...</div>
+                        )}
                         <div className="flex items-center border border-gray-200 mx-2 mb-8 rounded-xl w-[60%]">
-                            <input type="text" placeholder="Ask anything" className="flex-1 px-5 py-3 rounded-xl text-xs focus:outline-none"/>
-                            <button className="bg-black text-white rounded-full w-5 h-5 ml-2 mr-2 flex items-center justify-center cursor-pointer">
+                            <input 
+                                type="text" 
+                                placeholder="Ask anything" 
+                                className="flex-1 px-5 py-3 rounded-xl text-xs focus:outline-none" 
+                                onChange={(e) => setConversationInput(e.target.value)} 
+                                value={conversationInput}
+                                disabled={isLoading}
+                            />
+                            <button 
+                                className={`bg-black text-white rounded-full w-5 h-5 ml-2 mr-2 flex items-center justify-center ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} 
+                                onClick={handleConversationClick}
+                                disabled={isLoading}
+                            >
                                 <UpwardArrowIcon size={12} color="white" />
                             </button>
                         </div>
