@@ -15,7 +15,6 @@ import pickle
 from dotenv import load_dotenv
 load_dotenv()
 
-# Updated PromptTemplate with a single input variable
 prompt = PromptTemplate.from_template(
     "Respond strictly in JSON format without markdown or backticks.\n\n"
     "Return a JSON object with the following structure:\n"
