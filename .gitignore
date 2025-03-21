@@ -22,7 +22,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Python
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -30,7 +29,7 @@ __pycache__/
 
 # Virtual environment
 environ
-env/
+env
 *.venv
 pip-log.txt
 pip-delete-this-directory.txt
