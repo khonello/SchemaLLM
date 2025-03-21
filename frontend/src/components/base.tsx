@@ -72,6 +72,8 @@ export const Base = () => {
     }
 
     const navbarHandler = ( destination: any ) => {
+        
+        console.log(destination)
         navigate(destination)
     }
 
@@ -134,15 +136,13 @@ export const Base = () => {
             setSchemaTitle(newTitle)
             setConversationInput('')
             
-            // Store the title and navigate
             tempTitleRef.current = newTitle
-            navigate(`/${newTitle}`)
+            navbarHandler(`/${newTitle}`)
             
-            // Now that we have the title and it's been set, get the schema
             await getSchema(newTitle)
         } catch (error: any) {
+            
             console.error("Error in conversation:", error)
-            // User-facing error message
             setErrorMessage(
                 error.response?.data?.message || 
                 error.message || 
