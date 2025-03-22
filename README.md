@@ -75,7 +75,7 @@ The project uses a multi-layered storage approach:
 3. Install frontend dependencies:
    ```bash
    cd frontend
-   npm install
+   yarn install
    ```
 
 4. Set up environment variables:
@@ -98,14 +98,14 @@ The project uses a multi-layered storage approach:
 
 ```
 SchemaLLM/
-├── backend/           # Django backend
-│   ├── api/          # API endpoints and views
-│   ├── models/       # Database models
-│   └── serializers/  # Data serialization
-├── frontend/         # React TypeScript frontend
-│   ├── src/         # Source code
-│   └── public/      # Static assets
-└── package.json     # Frontend dependencies
+├── backend/               # Django backend
+│   ├── api/               # API endpoints and views
+│   ├── project            # Project configuration
+│   └── requirements.txt   # Backend dependencies
+├── frontend/              # React TypeScript frontend
+│   ├── src/               # Source code
+│   └── public/            # Static assets
+└── package.json           # Frontend dependencies
 ```
 
 ## Contributing
@@ -126,3 +126,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Groq for AI model hosting
 - Django REST Framework for API development
 - React and TypeScript for frontend development
+
+### Notes:
+ - Due to a bug, when you make your first request to create a schema, click in the top right button to see the listing of all schemas, and select the one you just created so that subsequent requests updates that schema. Failure to do so will result in a new schema being created instead of updating the current one.
