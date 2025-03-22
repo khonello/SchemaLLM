@@ -3,6 +3,8 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { UpwardArrowIcon, StarIcon, BreadCrumbIcon, CloseLineIcon, EditButtonIcon } from "../assets/svg";
 import interact from 'interactjs';
 import axios, { } from 'axios';
+import { Editor } from "@monaco-editor/react";
+import { format } from "sql-formatter";
 
 export const Base = () => {
 
@@ -82,9 +84,14 @@ export const Base = () => {
             tempTitleRef.current = title
             setSchemaTitle(resp.data.title)
             setEntities(newEntities)
-            setSchemaText(resp.data.sql)
+            setSchemaText(
+                format(resp.data.sql, {
+                    language: "sql",
+                    indentStyle: "standard",
+                    identifierCase: "lower"
+                })
+            )
             
-            // Process message data all at once instead of incrementally
             const newMessages: { sender: string; text: any; }[] = []
             resp.data.conversations.chat.forEach((message: any) => {
 
@@ -104,7 +111,8 @@ export const Base = () => {
 
                 const response = await axios.get(API_URL, { params: { title: title } })
                 execSchema(response)
-            } else {
+                setCurrentProject(title)
+            } else if (projectURL && !conversation ){
 
                 const response = await axios.get(projectURL, { })
                 execSchema(response)
@@ -113,7 +121,7 @@ export const Base = () => {
         } catch (error) {
 
             console.error("Error fetching schema:", error)
-            setErrorMessage("Failed to fetch schema data. Please try again.")
+            // setErrorMessage("Failed to fetch schema data. Please try again.")
         }
     }
 
@@ -365,13 +373,14 @@ export const Base = () => {
                         <div ref={schemaContainerRef} className="flex-1 p-5 relative overflow-auto m-2 rounded">
                             {isEditing ? (
                                 <div className="flex flex-col h-full">
-                                    <textarea
+                                    {/* <textarea
                                         value={schemaText}
                                         onChange={(e) => setSchemaText(e.target.value)}
                                         className="flex-1 p-4 border border-gray-200 rounded font-mono text-sm"
                                         placeholder="Edit your schema in SQL format"
                                         rows={100}
-                                    />
+                                    /> */}
+                                    <Editor defaultLanguage= 'sql' defaultValue= {schemaText} theme= 'vs' options= {{minimap: {enabled: false}, automaticLayout: true, scrollbar: { vertical: "hidden", horizontal: "hidden" }}} onChange= {(value: any) => setSchemaText(value)}/>
                                     <div className="flex justify-end mt-4">
                                         <button
                                             className="bg-gray-200 text-gray-800 rounded-md px-3 py-2 text-sm mr-2"

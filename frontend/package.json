@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@interactjs/types": "^1.10.27",
+    "@monaco-editor/react": "^4.7.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
@@ -14,6 +15,7 @@
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.4.0",
     "react-scripts": "5.0.1",
+    "sql-formatter": "^15.5.1",
     "web-vitals": "^2.1.0"
   },
   "scripts": {
