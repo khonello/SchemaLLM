@@ -77,3 +77,5 @@ pytest_cache/
 
 # If using Docker
 docker-compose.override.yml
+
+.env
