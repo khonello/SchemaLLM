@@ -23,16 +23,8 @@ export const Base = () => {
     const [conversationInput, setConversationInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState("")
-    const [messages, setMessages] = useState([
-        {
-            sender: "ai",
-            text: ""
-        },
-        {
-            sender: "user",
-            text: ""
-        }
-    ])
+    const [messages, setMessages] = useState([ { sender: "ai", text: "" }, { sender: "user", text: "" } ])
+    const [lastTwoMessages, setLastTwoMessages] = useState<any[]>([])
     const [projects, setProjects] = useState([])
 
     const toggleEditMode = () => {
@@ -87,6 +79,7 @@ export const Base = () => {
                 position: {x: index * 250, y: 0}
             }))
             tempTitleRef.current = title
+            setSchemaTitle(resp.data.title)
             setEntities(newEntities)
             setSchemaText(resp.data.sql)
             
@@ -187,11 +180,33 @@ export const Base = () => {
                         className="m-0 text-lg font-medium border-b border-gray-300 focus:outline-none"
                     />
                 ) : (
-                    <h1 className="m-0 text-lg font-medium">{schemaTitle}</h1>
+                    <h1 className="m-0 text-lg font-medium">{title}</h1>
                 )}
             </div>
         );
     }
+
+    const LastTwoMessage = ( {lastTwo} : {lastTwo : any[]}) => (
+        <div className="p-4 bg-transparent mx-2 mb-2 rounded max-h-40 overflow-y-auto">
+            {
+                !isEditing && lastTwo.map((message, index) => (
+                    <div key={index} className="p-2 max-w-[100%] mx-auto text-center">
+                                {message.sender === 'user' ? (
+                                    <div className="mx-auto text-center bg-gray-100 py-2 px-4 inline-block rounded-xl shadow-sm">
+                                        {message.text}
+                                    </div>
+                                ) : (
+                                    <div className="mx-auto text-center">
+                                        <div className="bg-transparent text-gray-800 py-2 px-4 inline-block">
+                                            {message.text}
+                                        </div>
+                                    </div>
+                                )
+                            }
+                    </div>
+            ))}
+        </div>
+    )
 
     useEffect(() => {
         
@@ -296,6 +311,13 @@ export const Base = () => {
 
     useEffect(() => {
 
+        setLastTwoMessages(
+            messages.length > 2 ? (
+                messages.slice(0, 2)
+            ) : (
+                messages
+            )
+        )
     }, [messages])
 
     return (
@@ -368,18 +390,18 @@ export const Base = () => {
                                         value={schemaText}
                                         onChange={(e) => setSchemaText(e.target.value)}
                                         className="flex-1 p-4 border border-gray-200 rounded font-mono text-sm"
-                                        placeholder="Edit your schema in JSON format"
+                                        placeholder="Edit your schema in SQL format"
                                         rows={100}
                                     />
                                     <div className="flex justify-end mt-4">
                                         <button
-                                            className="bg-gray-200 text-gray-800 rounded-md px-4 py-2 text-sm mr-2"
+                                            className="bg-gray-200 text-gray-800 rounded-md px-3 py-2 text-sm mr-2"
                                             onClick={() => setIsEditing(false)}
                                         >
                                             Cancel
                                         </button>
                                         <button
-                                            className="bg-black text-white rounded-md px-4 py-2 text-sm"
+                                            className="bg-black text-white rounded-md px-3 py-2 text-sm"
                                             onClick={toggleEditMode}
                                         >
                                             Save Changes
@@ -407,7 +429,7 @@ export const Base = () => {
                         </div>
                         <div className="p-4 bg-transparent mx-2 mb-2 rounded max-h-40 overflow-y-auto">
                             {
-                                !isEditing && messages.map((message, index) => (
+                                !isEditing && lastTwoMessages.map((message, index) => (
                                     <div key={index} className="p-2 max-w-[100%] mx-auto text-center">
                                                 {message.sender === 'user' ? (
                                                     <div className="mx-auto text-center bg-gray-100 py-2 px-4 inline-block rounded-xl shadow-sm">
