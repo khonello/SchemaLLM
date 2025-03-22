@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { UpwardArrowIcon, StarIcon, BreadCrumbIcon, CloseLineIcon, EditButtonIcon } from "../assets/svg";
 import interact from 'interactjs';
-import axios from 'axios';
+import axios, { Axios } from 'axios';
 
 export const Base = () => {
 
@@ -33,113 +33,136 @@ export const Base = () => {
             text: ""
         }
     ])
-    const [projects, setProjects] = useState([
-        {
-            id: 'project1',
-            title: 'Database Schema for User Roles',
-        },
-        {
-            id: 'project2',
-            title: 'Employee Management Database',
-        },
-        {
-            id: 'project3',
-            title: 'Permissions & Access Control Schema',
-        },
-        {
-            id: 'project4',
-            title: 'Customer Orders & Payment Schema',
-        },
-        {
-            id: 'project5',
-            title: 'Product & Cart Schema'
-        }
-    ])
+    const [projects, setProjects] = useState([])
 
     const toggleEditMode = () => {
+
         if (isEditing) {
             
             try {
-                const newEntities = JSON.parse(schemaText);
-                setEntities(newEntities);
+
+                // const newEntities = JSON.parse(schemaText)
+                // setEntities(newEntities)
             } catch (error) {
-                console.error("Invalid JSON:", error);
-                setErrorMessage("Invalid JSON. Please check your syntax.");
-                return; // Don't toggle edit mode if JSON is invalid
+
+                // console.error("Invalid JSON:", error)
+                // setErrorMessage("Invalid JSON. Please check your syntax.");
+                // return // Don't toggle edit mode if JSON is invalid
             }
         }
         setIsEditing(!isEditing);
     }
 
-    const navbarHandler = ( destination: any ) => {
+    const navbarHandler = ( destination: string ) => {
         
-        console.log(destination)
-        navigate(destination)
+        if (destination !== "/" && destination !== "/details") {
+
+            const projectURL = `${API_URL}project${destination}`
+            getSchema(null, projectURL)
+            navigate(destination)
+        } else if (destination === "/details") {
+            
+            (async () => {
+                
+                const response = await axios.get(`${API_URL}details`, {})
+                setProjects(response.data)
+            })()
+            navigate(destination)
+        } else {
+
+            setCurrentProject(null)
+            navigate("/")
+        }
     }
 
-    const getSchema = async (title: string) => {
-        try {
-            const response = await axios.get(API_URL, { 
-                params: { title: title } 
-            })
-            
-            // Process entity data all at once instead of incrementally
-            const newEntities = response.data.json.map((entity: any, index: number) => ({
+    const getSchema = async (title: string | null = null, projectURL: string | null = null, conversation: string | null = null) => {
+        
+        const execSchema = (resp: any) => {
+
+            const newEntities = resp.data.json.map((entity: any, index: number) => ({
+
                 id: entity.id, 
                 fields: entity.fields, 
                 title: entity.title, 
                 position: {x: index * 250, y: 0}
             }))
+            tempTitleRef.current = title
             setEntities(newEntities)
+            setSchemaText(resp.data.sql)
             
             // Process message data all at once instead of incrementally
             const newMessages: { sender: string; text: any; }[] = []
-            response.data.conversations.chat.forEach((message: any) => {
+            resp.data.conversations.chat.forEach((message: any) => {
+
                 newMessages.push({ sender: 'user', text: message.user })
                 newMessages.push({ sender: 'ai', text: message.ai })
             })
             setMessages(newMessages.reverse())
+        }
+
+        try {
+
+            if (projectURL && conversation) {
+                
+                const response = await axios.post(projectURL, { conversation: conversation })
+                execSchema(response)
+            } else if (!projectURL) {
+
+                const response = await axios.get(API_URL, { params: { title: title } })
+                execSchema(response)
+            } else {
+
+                const response = await axios.get(projectURL, { })
+                execSchema(response)
+            }
+            
         } catch (error) {
+
             console.error("Error fetching schema:", error)
             setErrorMessage("Failed to fetch schema data. Please try again.")
         }
     }
 
     const handleConversationClick = async () => {
-        // Clear any previous error message
-        setErrorMessage("")
         
-        // Show loading state
+        setErrorMessage("")
         setIsLoading(true)
         
         try {
-            // Reset states first
-            setMessages([])
-            setEntities([])
             
-            // Validate input
-            if (!conversationInput.trim()) {
-                throw new Error("Please enter a message")
+            if (!currentProject) {
+
+                setMessages([])
+                setEntities([])
+                
+                if (!conversationInput.trim()) {
+                    throw new Error("Please enter a message")
+                }
+                
+                const response = await axios.post(API_URL, { 
+                    title: null, 
+                    conversation: conversationInput 
+                })
+                
+                if (!response.data || !response.data.title) {
+                    throw new Error("Invalid response from server")
+                }
+                
+                const newTitle = response.data.title
+                setSchemaTitle(newTitle)
+                setConversationInput('')
+                
+                tempTitleRef.current = newTitle
+                navbarHandler(`/${newTitle}`)
+                
+                await getSchema(newTitle)
+            } else {
+
+                const projectURL = `${API_URL}project/${currentProject}`
+                getSchema(null, projectURL, conversationInput)
+                setConversationInput('')
+
             }
-            
-            // Create schema and wait for it to complete
-            const response = await axios.post(API_URL, { 
-                title: null, 
-                conversation: conversationInput 
-            })
-            
-            if (!response.data || !response.data.title) {
-                throw new Error("Invalid response from server")
-            }
-            
-            const newTitle = response.data.title
-            setSchemaTitle(newTitle)
-            setConversationInput('')
-            
-            tempTitleRef.current = newTitle
-            navbarHandler(`/${newTitle}`)
-            
-            await getSchema(newTitle)
         } catch (error: any) {
             
             console.error("Error in conversation:", error)
@@ -159,7 +182,7 @@ export const Base = () => {
                 {isEditing ? (
                     <input
                         type="text"
-                        value={schemaTitle}
+                        value={title}
                         onChange={(e) => setSchemaTitle(e.target.value)}
                         className="m-0 text-lg font-medium border-b border-gray-300 focus:outline-none"
                     />
@@ -172,8 +195,8 @@ export const Base = () => {
 
     useEffect(() => {
         
-        const entitiesJson = JSON.stringify(entities, null, 2);
-        setSchemaText(entitiesJson);
+        // const entitiesJson = JSON.stringify(entities, null, 2);
+        // setSchemaText('')
     }, [entities])
 
     useEffect(() => {
@@ -272,8 +295,8 @@ export const Base = () => {
     }, [currentProject])
 
     useEffect(() => {
-        
-    }, [])
+
+    }, [messages])
 
     return (
         <div className="flex flex-col h-screen font-sans">
@@ -408,17 +431,17 @@ export const Base = () => {
                             <div className="flex-1 p-1 bg-transparent relative overflow-auto m-2 rounded">
                                 <div className="flex flex-col items-center justify-center h-full">
                                     {
-                                        projects.map(({id, title} : {id: string, title: string}) => {
-                                            if (id === currentProject) {
+                                        projects.map(({title} : {title: string}, key: number) => {
+                                            if (title === currentProject) {
                                                 return (
-                                                    <button key={id} className="m-0 text-sm text-blue-600 font-small mb-6" onClick={(ev) => {
-                                                        setCurrentProject(id)
+                                                    <button key={key} className="m-0 text-sm text-blue-600 font-small mb-6" onClick={(ev) => {
+                                                        setCurrentProject(title)
                                                     }}>{title}</button>
                                                 )
                                             } else {
                                                 return (
-                                                    <button key={id} className="m-0 text-sm text-gray-800 font-small mb-6" onClick={(ev) => {
-                                                        setCurrentProject(id)
+                                                    <button key={key} className="m-0 text-sm text-gray-800 font-small mb-6" onClick={(ev) => {
+                                                        setCurrentProject(title)
                                                     }}>{title}</button>
                                                 )
                                             }
