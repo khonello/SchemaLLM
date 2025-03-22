@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { UpwardArrowIcon, StarIcon, BreadCrumbIcon, CloseLineIcon, EditButtonIcon } from "../assets/svg";
 import interact from 'interactjs';
-import axios, { Axios } from 'axios';
+import axios, { } from 'axios';
 
 export const Base = () => {
 
@@ -17,7 +17,7 @@ export const Base = () => {
         []
     )
     const [currentProject, setCurrentProject] = useState<any>(null)
-    const [schemaTitle, setSchemaTitle] = useState("")
+    const [schemaTitle, setSchemaTitle] = useState<string|null>(null)
     const [isEditing, setIsEditing] = useState(false)
     const [schemaText, setSchemaText] = useState("")
     const [conversationInput, setConversationInput] = useState("")
@@ -49,7 +49,7 @@ export const Base = () => {
         
         if (destination !== "/" && destination !== "/details") {
 
-            const projectURL = `${API_URL}project${destination}`
+            const projectURL = `${API_URL}project/${currentProject}`
             getSchema(null, projectURL)
             navigate(destination)
         } else if (destination === "/details") {
@@ -63,6 +63,7 @@ export const Base = () => {
         } else {
 
             setCurrentProject(null)
+            setSchemaTitle(null)
             navigate("/")
         }
     }
@@ -185,28 +186,6 @@ export const Base = () => {
             </div>
         );
     }
-
-    const LastTwoMessage = ( {lastTwo} : {lastTwo : any[]}) => (
-        <div className="p-4 bg-transparent mx-2 mb-2 rounded max-h-40 overflow-y-auto">
-            {
-                !isEditing && lastTwo.map((message, index) => (
-                    <div key={index} className="p-2 max-w-[100%] mx-auto text-center">
-                                {message.sender === 'user' ? (
-                                    <div className="mx-auto text-center bg-gray-100 py-2 px-4 inline-block rounded-xl shadow-sm">
-                                        {message.text}
-                                    </div>
-                                ) : (
-                                    <div className="mx-auto text-center">
-                                        <div className="bg-transparent text-gray-800 py-2 px-4 inline-block">
-                                            {message.text}
-                                        </div>
-                                    </div>
-                                )
-                            }
-                    </div>
-            ))}
-        </div>
-    )
 
     useEffect(() => {
         
@@ -365,8 +344,8 @@ export const Base = () => {
                             )
                         }
                     </button>
-                    <div className="w-8 h-8 overflow-hidden rounded-full">
-                        <img src="/assets/Avatar.png" alt="User" className="w-full h-full object-cover" />
+                    <div className="w-5 h-5 overflow-hidden rounded-full">
+                        <img src="/Avatar.png" alt="User" className="w-full h-full object-cover" />
                     </div>
                 </div>
             </header>
